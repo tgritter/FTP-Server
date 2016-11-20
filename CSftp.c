@@ -44,6 +44,12 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+// read a line from the client
+void readLine(int new_fd, char* buff){
+	recv(new_fd, buff, 2000, 0);
+	printf("contents of buff are %s\n", buff);
+}
+
 int main(int argc, char **argv )
 {
 	char* PORT;
@@ -134,7 +140,12 @@ int main(int argc, char **argv )
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
-
+	send(new_fd, "ftp> ", 5, 0);
+	char buff[2000];
+	readLine(new_fd, buff);
+	printf("contents of buff are %s\n", buff);
+	//recv(new_fd, buff, 2000, 0);
+/*	
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
             if (send(new_fd, "Hello, world\n!", 13, 0) == -1)
@@ -143,7 +154,9 @@ int main(int argc, char **argv )
             exit(0);
         }
         close(new_fd);  // parent doesn't need this
+*/
     }
 
     return 0;
 }
+
