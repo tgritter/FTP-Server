@@ -50,6 +50,20 @@ void readLine(int new_fd, char* buff){
 	printf("contents of buff are %s\n", buff);
 }
 
+char  parseInput(char* buff){
+	printf("entered parseInput");
+	char returnbuff;
+	if (buff == "cs317"){
+		printf("317 input");
+		returnbuff = "Correct password";
+	}
+	else{
+		returnbuff = "500 error code";
+	}
+	return returnbuff;
+
+}
+
 int main(int argc, char **argv )
 {
 	char* PORT;
@@ -143,18 +157,8 @@ int main(int argc, char **argv )
 	send(new_fd, "ftp> ", 5, 0);
 	char buff[2000];
 	readLine(new_fd, buff);
-	printf("contents of buff are %s\n", buff);
-	//recv(new_fd, buff, 2000, 0);
-/*	
-        if (!fork()) { // this is the child process
-            close(sockfd); // child doesn't need the listener
-            if (send(new_fd, "Hello, world\n!", 13, 0) == -1)
-                perror("send");
-            close(new_fd);
-            exit(0);
-        }
-        close(new_fd);  // parent doesn't need this
-*/
+	char returnVal = parseInput(buff);
+
     }
 
     return 0;
