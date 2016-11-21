@@ -50,18 +50,18 @@ void readLine(int new_fd, char* buff){
 	printf("contents of buff are %s\n", buff);
 }
 
-char  parseInput(char* buff){
-	printf("entered parseInput");
-	char returnbuff;
-	if (buff == "cs317"){
-		printf("317 input");
+char*  parseInput(char* buff){
+	printf("entered parseInput \n");
+	char* returnbuff;
+	
+	if (strncmp(buff, "cs317", 5) == 0){
+		printf("317 input\n");
 		returnbuff = "Correct password";
 	}
 	else{
 		returnbuff = "500 error code";
-	}
+	}	
 	return returnbuff;
-
 }
 
 int main(int argc, char **argv )
@@ -143,6 +143,7 @@ int main(int argc, char **argv )
     printf("server: waiting for connections...\n");
 
     while(1) {  // main accept() loop
+    	
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
         if (new_fd == -1) {
@@ -154,10 +155,14 @@ int main(int argc, char **argv )
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
+	
+	while(1) {
 	send(new_fd, "ftp> ", 5, 0);
 	char buff[2000];
 	readLine(new_fd, buff);
-	char returnVal = parseInput(buff);
+	char* returnVal = parseInput(buff);
+	printf("contents of returnVal are: %s\n", returnVal);
+	}
 
     }
 
