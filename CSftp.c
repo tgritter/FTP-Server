@@ -50,17 +50,81 @@ void readLine(int new_fd, char* buff){
 	printf("contents of buff are %s\n", buff);
 }
 
-char*  parseInput(char* buff){
+char*  parseInput(char* buff, int new_fd){
 	printf("entered parseInput \n");
-	char* returnbuff;
-	
+	char *returnbuff;
+	int inputCase;
 	if (strncmp(buff, "cs317", 5) == 0){
+		inputCase = 0;
+		}
+	if (strncmp(buff, "USER cs317", 10) == 0 ){
+		inputCase = 0;
+		}
+	if (strncmp(buff, "QUIT", 4) == 0){
+		inputCase = 1;
+		}
+	if (strncmp(buff, "TYPE", 4) == 0){
+		inputCase = 2;
+		}
+	if (strncmp(buff, "MODE", 4) == 0){
+		inputCase = 3;
+		}
+	if (strncmp(buff, "STRU", 4) == 0){
+		inputCase = 4;
+		}
+	if (strncmp(buff, "RETR", 4) == 0){
+		inputCase = 5;
+		}
+	if (strncmp(buff, "PASV", 4) == 0){
+		inputCase = 6;
+		}
+	if (strncmp(buff, "NLIST", 4) == 0){
+		inputCase = 7;
+		}
+	
+		
+	switch(inputCase)
+	{
+		case 0:
+			returnbuff = "Correct password";
+			break;
+		case 1:
+			returnbuff = "Closing Socket";
+			close(new_fd);
+			break;
+		case 2:
+			returnbuff = "Image Type";
+			break;
+		case 3:
+			returnbuff = "Stream Mode";
+			break;
+		case 4:
+			returnbuff = "File Structure Type";
+			break;
+		case 5:
+			returnbuff = "Transfering File";
+			break;
+		case 6:
+			returnbuff = "Passive Mode";
+			break;
+		case 7:
+			returnbuff = "Returning Name List";
+			break;
+		default :
+			returnbuff = "500 error code";
+	}
+	
+	
+	
+	
+	/*if (strncmp(buff, "cs317", 5) == 0){
 		printf("317 input\n");
 		returnbuff = "Correct password";
 	}
 	else{
 		returnbuff = "500 error code";
-	}	
+	} */
+		
 	return returnbuff;
 }
 
@@ -157,11 +221,17 @@ int main(int argc, char **argv )
         printf("server: got connection from %s\n", s);
 	
 	while(1) {
+	
+	char newline = '\n';
 	send(new_fd, "ftp> ", 5, 0);
 	char buff[2000];
 	readLine(new_fd, buff);
-	char* returnVal = parseInput(buff);
+	char* returnVal = parseInput(buff, new_fd);
 	printf("contents of returnVal are: %s\n", returnVal);
+	send(new_fd, returnVal, 16, 0);
+	send(new_fd, &newline, 1, 0);
+	
+	
 	}
 
     }
