@@ -54,6 +54,8 @@ char*  parseInput(char* buff, int new_fd){
 	printf("entered parseInput \n");
 	char *returnbuff;
 	int inputCase;
+	char newline = '\n';
+	
 	if (strncmp(buff, "cs317", 5) == 0){
 		inputCase = 0;
 		}
@@ -63,13 +65,16 @@ char*  parseInput(char* buff, int new_fd){
 	if (strncmp(buff, "QUIT", 4) == 0){
 		inputCase = 1;
 		}
-	if (strncmp(buff, "TYPE", 4) == 0){
+	if (strncmp(buff, "TYPE I", 6) == 0){
 		inputCase = 2;
 		}
-	if (strncmp(buff, "MODE", 4) == 0){
+	if (strncmp(buff, "TYPE A", 6) == 0){
+		inputCase = 2;
+		}
+	if (strncmp(buff, "MODE S", 6) == 0){
 		inputCase = 3;
 		}
-	if (strncmp(buff, "STRU", 4) == 0){
+	if (strncmp(buff, "STRU F", 6) == 0){
 		inputCase = 4;
 		}
 	if (strncmp(buff, "RETR", 4) == 0){
@@ -78,7 +83,7 @@ char*  parseInput(char* buff, int new_fd){
 	if (strncmp(buff, "PASV", 4) == 0){
 		inputCase = 6;
 		}
-	if (strncmp(buff, "NLIST", 4) == 0){
+	if (strncmp(buff, "NLST", 4) == 0){
 		inputCase = 7;
 		}
 	
@@ -93,22 +98,29 @@ char*  parseInput(char* buff, int new_fd){
 			close(new_fd);
 			break;
 		case 2:
-			returnbuff = "Image Type";
+			returnbuff = "TYPE: Image";
+			send(new_fd, "200 success code", 16, 0);
+			send(new_fd, &newline, 1, 0);			
 			break;
 		case 3:
-			returnbuff = "Stream Mode";
+			returnbuff = "Mode: Stream";
+			send(new_fd, "200 success code", 16, 0);
+			send(new_fd, &newline, 1, 0);
 			break;
 		case 4:
-			returnbuff = "File Structure Type";
+			returnbuff = "STRU: File Structure";
+			send(new_fd, "200 success code", 16, 0);
+			send(new_fd, &newline, 1, 0);
 			break;
 		case 5:
 			returnbuff = "Transfering File";
 			break;
 		case 6:
-			returnbuff = "Passive Mode";
+			returnbuff = "Passive Mode";			
 			break;
 		case 7:
 			returnbuff = "Returning Name List";
+			printf("Printed %d directory entries\n", listFiles(new_fd, "."));
 			break;
 		default :
 			returnbuff = "500 error code";
@@ -230,6 +242,10 @@ int main(int argc, char **argv )
 	printf("contents of returnVal are: %s\n", returnVal);
 	send(new_fd, returnVal, 16, 0);
 	send(new_fd, &newline, 1, 0);
+	
+	if (strncmp(returnVal, "Closing Socket", 7) == 0){
+		break;
+		}
 	
 	
 	}
