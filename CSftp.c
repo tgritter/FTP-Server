@@ -51,7 +51,6 @@ void readLine(int new_fd, char* buff){
 }
 
 char*  parseInput(char* buff, int new_fd){
-	printf("entered parseInput \n");
 	char *returnbuff;
 	int inputCase;
 	char newline = '\n';
@@ -116,7 +115,7 @@ char*  parseInput(char* buff, int new_fd){
 			returnbuff = "Transfering File";
 			break;
 		case 6:
-			returnbuff = "Passive Mode";			
+			returnbuff = "227 Entering Passive Mode. ";			
 			break;
 		case 7:
 			returnbuff = "Returning Name List";
@@ -129,19 +128,8 @@ char*  parseInput(char* buff, int new_fd){
 	return returnbuff;
 }
 
-int main(int argc, char **argv )
+int socketHelper(char* PORT )
 {
-	char* PORT;
-
-    if (argc != 2) {
-   	usage(argv[0]);
-	return -1;
-	}
-	else{
-	PORT = strdup(argv[1]);
-	printf("Trying to open socket on port %s.\n", PORT);
-			}
-	 
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
@@ -243,3 +231,15 @@ int main(int argc, char **argv )
     return 0;
 }
 
+int main(int argc, char **argv){
+	char* PORT;
+
+    if (argc != 2) {
+   	usage(argv[0]);
+	return -1;
+	}
+	else{
+	PORT = strdup(argv[1]);
+	}
+	socketHelper(PORT);
+}
