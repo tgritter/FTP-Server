@@ -126,17 +126,6 @@ char*  parseInput(char* buff, int new_fd){
 			returnbuff = "500 error code";
 	}
 	
-	
-	
-	
-	/*if (strncmp(buff, "cs317", 5) == 0){
-		printf("317 input\n");
-		returnbuff = "Correct password";
-	}
-	else{
-		returnbuff = "500 error code";
-	} */
-		
 	return returnbuff;
 }
 
@@ -153,7 +142,6 @@ int main(int argc, char **argv )
 	printf("Trying to open socket on port %s.\n", PORT);
 			}
 	 
-    printf("Printed %d directory entries\n", listFiles(1, "."));
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
