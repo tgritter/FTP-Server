@@ -45,32 +45,8 @@ if((new_str = malloc(strlen(str1)+strlen(str2)+1)) != NULL){
 }
 }
 
-char* pasv_ip_helper(char ip[], int port){
-	int p1 = round(port/256);
-	int p2 = port % 256;
-	int i;
-	printf("p1 is %d and p2 is %d\n", p1, p2);
-	printf("string length is %d\n", my_strlen(ip));	
-	for(i = 0; i++; i < my_strlen(ip)){
-		if(ip[i] == "."){
-			ip[i] = ",";
-		}
-		printf("ip is %s\n", ip);
-	}
-	char p1_char[3];
-	sprintf(p1_char, "%d", p1);
-	char p2_char[3];
-	sprintf(p2_char, "%d", p2);
-	printf("p2_char is %s\n", p2_char);
-	char* p1p2 = concat(p1_char, ",");
-	p1p2 = concat(p1p2, p2_char);
-	printf("p1p2 is %s\n", p1p2);
-	char* return_address = strcat(ip,p1p2); 
-	printf("return_address is %s\n", return_address);
-	return return_address;
-} 
-
 int my_strlen(char *string) //Function to calculate length of given string
+
 {
     int i;
     for(i=0;string[i]!='\0';i++);
@@ -161,34 +137,29 @@ char*  parseInput(char* buff, int new_fd){
 			returnbuff = "Transfering File";
 			break;
 		case 6:
-			returnbuff = "227 Entering Passive Mode";
-			socketHelper("2000", 1);
-			int port = 2000;
+			returnbuff = "227 Entering Passive Mode (";
+			socketHelper("2002", 1);
+			int port = 2002;
 			int p1 = round(port/256);
 			int p2 = port % 256;
 			int i;
-			printf("p1 is %d and p2 is %d\n", p1, p2);
-			printf("string length is %d\n", my_strlen(socket_IP));	
-			for(i = 0; i++; i < my_strlen(socket_IP)){
-				printf("current digit is %s\n", socket_IP[i]);
-				if(socket_IP[i] == '.'){
-					socket_IP[i] = ',';
+			char* tempIP = socket_IP;
+			int ip_len = my_strlen(tempIP);
+			for(i = 0; i < ip_len; i++){
+				if((char)tempIP[i] == '.'){
+					tempIP[i] = ',';
 				}
-			printf("ip is %s\n", socket_IP);
 			}
 			char p1_char[3];
 			sprintf(p1_char, "%d", p1);
 			char p2_char[3];
 			sprintf(p2_char, "%d", p2);
-			printf("p2_char is %s\n", p2_char);
 			char* p1p2 = concat(p1_char, ",");
 			p1p2 = concat(p1p2, p2_char);
-			printf("p1p2 is %s\n", p1p2);
-			char* return_address = strcat(socket_IP, ",");
+			char *return_address = strcat(socket_IP, ",");
 			return_address = strcat(return_address, p1p2);
-			printf("return_address is %s\n", return_address);
-			printf("The tempIP variable is %s\n", socket_IP);
-			//pasv_ip_helper(sockIP, 2000);
+			returnbuff = concat(returnbuff, return_address);
+			returnbuff = concat(returnbuff, ")");
 			break;
 		case 7:
 			returnbuff = "Returning Name List";
