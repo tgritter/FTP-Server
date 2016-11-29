@@ -17,6 +17,8 @@
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
+int socketHelper(char* PORT, int data);
+
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -115,6 +117,7 @@ char*  parseInput(char* buff, int new_fd){
 			returnbuff = "Transfering File";
 			break;
 		case 6:
+			socketHelper("2000", 1);
 			returnbuff = "227 Entering Passive Mode. ";			
 			break;
 		case 7:
@@ -128,7 +131,8 @@ char*  parseInput(char* buff, int new_fd){
 	return returnbuff;
 }
 
-int socketHelper(char* PORT )
+// if data == 1, is a data port and won't send/recieve text
+int socketHelper(char* PORT, int data)
 {
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
@@ -192,6 +196,7 @@ int socketHelper(char* PORT )
         exit(1);
     }
 
+    if(!data){
     printf("server: waiting for connections...\n");
 
     while(1) {  // main accept() loop
@@ -227,6 +232,10 @@ int socketHelper(char* PORT )
 	}
 
     }
+}
+else {
+	printf("Opened secondary port\n");
+}
 
     return 0;
 }
@@ -241,5 +250,6 @@ int main(int argc, char **argv){
 	else{
 	PORT = strdup(argv[1]);
 	}
-	socketHelper(PORT);
+	socketHelper(PORT, 0);
+	
 }
