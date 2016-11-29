@@ -19,6 +19,7 @@
 
 #define BACKLOG 10     // how many pending connections queue will hold
 
+char *socket_IP[52];
 char* socketHelper(char* PORT, int data);
 int my_strlen(char *string); //Function to calculate length of given string
 void sigchld_handler(int s)
@@ -161,9 +162,33 @@ char*  parseInput(char* buff, int new_fd){
 			break;
 		case 6:
 			returnbuff = "227 Entering Passive Mode";
-			sockIP = socketHelper("2000", 1);
-			printf("The tempIP variable is %s\n", sockIP);
-			pasv_ip_helper(sockIP, 2000);
+			socketHelper("2000", 1);
+			int port = 2000;
+			int p1 = round(port/256);
+			int p2 = port % 256;
+			int i;
+			printf("p1 is %d and p2 is %d\n", p1, p2);
+			printf("string length is %d\n", my_strlen(socket_IP));	
+			for(i = 0; i++; i < my_strlen(socket_IP)){
+				printf("current digit is %s\n", socket_IP[i]);
+				if(socket_IP[i] == '.'){
+					socket_IP[i] = ',';
+				}
+			printf("ip is %s\n", socket_IP);
+			}
+			char p1_char[3];
+			sprintf(p1_char, "%d", p1);
+			char p2_char[3];
+			sprintf(p2_char, "%d", p2);
+			printf("p2_char is %s\n", p2_char);
+			char* p1p2 = concat(p1_char, ",");
+			p1p2 = concat(p1p2, p2_char);
+			printf("p1p2 is %s\n", p1p2);
+			char* return_address = strcat(socket_IP, ",");
+			return_address = strcat(return_address, p1p2);
+			printf("return_address is %s\n", return_address);
+			printf("The tempIP variable is %s\n", socket_IP);
+			//pasv_ip_helper(sockIP, 2000);
 			break;
 		case 7:
 			returnbuff = "Returning Name List";
@@ -234,8 +259,8 @@ char *socketHelper(char* PORT, int data)
             addr = &(ipv6->sin6_addr);
             ipver = "IPv6";
         }
-	inet_ntop(servinfo->ai_family, servinfo->ai_addr, sockIP, sizeof sockIP);	
-	printf("Servinfo addr: %s\n", sockIP);
+	inet_ntop(servinfo->ai_family, servinfo->ai_addr, socket_IP, sizeof socket_IP);	
+	printf("Servinfo addr: %s\n", socket_IP);
 	
 	   break;
     }
