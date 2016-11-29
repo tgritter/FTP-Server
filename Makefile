@@ -19,7 +19,7 @@ CPPFLAGS=
 CFLAGS=-g -Werror-implicit-function-declaration
 
 #These are the options for building the threaded version of the program
-TH_CLIBS=-pthread
+TH_CLIBS=-pthread -lm
 
 #List all the .o files here that need to be linked 
 OBJS=CSftp.o usage.o dir.o 
