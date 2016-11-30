@@ -70,6 +70,52 @@ void readLine(int new_fd, char* buff){
 	printf("contents of buff are %s\n", buff);
 }
 
+void str_server(int sock) 
+{ 
+    char buf[1025]; 
+    const char* filename = "test.txt"; 
+    FILE *file = fopen(filename, "rb"); 
+    if (!file)
+    {
+        printf("Can't open file for reading"); 
+        return;
+    }
+    while (!feof(file)) 
+    { 
+        int rval = fread(buf, 1, sizeof(buf), file); 
+        if (rval < 1)
+        {
+            printf("Can't read from file");
+            fclose(file);
+            return;
+        }
+
+        int off = 0;
+        do
+        {
+            int sent = send(sock, &buf[off], rval - off, 0);
+            if (sent < 1)
+            {
+                // if the socket is non-blocking, then check
+                // the socket error for WSAEWOULDBLOCK/EAGAIN
+                // (depending on platform) and if true then
+                // use select() to wait for a small period of
+                // time to see if the socket becomes writable
+                // again before failing the transfer...
+
+                printf("Can't write to socket");
+                fclose(file);
+                return;
+            }
+            
+            off += sent;
+        }
+        while (off < rval);
+    } 
+
+    fclose(file);
+}
+
 char*  parseInput(char* buff, int new_fd){
 	char *returnbuff;
     	char sockIP[INET6_ADDRSTRLEN];
@@ -135,6 +181,7 @@ char*  parseInput(char* buff, int new_fd){
 			break;
 		case 5:
 			returnbuff = "Transfering File";
+			str_server(new_fd);
 			break;
 		case 6:
 			returnbuff = "227 Entering Passive Mode (";
