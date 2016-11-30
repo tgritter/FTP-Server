@@ -23,8 +23,7 @@
 char *socket_IP[52];
 char* socketHelper(char* PORT, int data);
 int my_strlen(char *string); //Function to calculate length of given string
-char* PORT_GLOBAL;
-void *connection_handler(void *threadid);
+void *threading_handler(void *threadid);
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -365,42 +364,31 @@ else {
     return sockIP;
 }
 
+//Helper function for threading
 void *threading_handler(void *threadid)
 {
-	char* PORT_TEMP1 = "4001";;
-	char* PORT_TEMP2 = "4002";;
-	char* PORT_TEMP3 = "4003";
-	char* PORT_TEMP4 = "4004";
-	char* PORT_TEMP;
+	char* PORT_THREAD;
 	int threadnum = (int)threadid;
-	int val = atoi(PORT_GLOBAL);
 	printf("ThreadNum: %d\n", threadnum);
 	switch(threadnum)
 	{
 		case 1:
-			val = val + threadnum;
-			//sprintf(PORT_TEMP1, "%d", val);
-			socketHelper(PORT_TEMP1, 0);
+			PORT_THREAD = "4001";
 			break;
 		case 2:
-			val = val + threadnum;
-			//sprintf(PORT_TEMP2, "%d", val);
-			socketHelper(PORT_TEMP2, 0);
-			break;			
-			
+			PORT_THREAD = "4002";
+			break;						
 		case 3:
-			val = val + threadnum;
-			//sprintf(PORT_TEMP3, "%d", val);
-			socketHelper(PORT_TEMP3, 0);
+			PORT_THREAD = "4003";
 			break;
 		case 4:
-			val = val + threadnum;
-			//sprintf(PORT_TEMP4, "%d", val);
-			socketHelper(PORT_TEMP4, 0);
+			PORT_THREAD = "4004";
 			break;
 		default:
-			socketHelper(PORT_GLOBAL, 0);
+			PORT_THREAD = "4000";
 	}
+	
+	socketHelper(PORT_THREAD, 0);
 	
 }
 	
@@ -416,15 +404,15 @@ int main(int argc, char **argv){
 	else{
 	PORT = strdup(argv[1]);
 	}
-	PORT_GLOBAL = PORT;
 	
-	//Threading
+	//Threading loop
 	for (i=1; i<=NUM_CLIENT; i++) {
         if(runThread(createThread(&threading_handler, (void*) i), NULL) < 0)
         {
             perror("could not create thread");
             return 1;
         }
+        sleep(2);
         
     }
     pthread_exit(NULL);
