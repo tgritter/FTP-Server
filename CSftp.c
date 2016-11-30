@@ -13,15 +13,18 @@
 #include <signal.h>
 #include "dir.h"
 #include "usage.h"
+#include "Thread.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <math.h>
-
+#define NUM_CLIENT 4
 #define BACKLOG 10     // how many pending connections queue will hold
 
 char *socket_IP[52];
 char* socketHelper(char* PORT, int data);
 int my_strlen(char *string); //Function to calculate length of given string
+char* PORT_GLOBAL;
+void *connection_handler(void *threadid);
 void sigchld_handler(int s)
 {
     // waitpid() might overwrite errno, so we save and restore it:
@@ -116,7 +119,7 @@ void str_server(int sock)
     fclose(file);
 }
 
-char*  parseInput(char* buff, int new_fd){
+char*  parseInput(char* buff, int new_fd, char* PORT){
 	char *returnbuff;
     	char sockIP[INET6_ADDRSTRLEN];
 	int inputCase;
@@ -154,6 +157,21 @@ char*  parseInput(char* buff, int new_fd){
 		inputCase = 7;
 		}
 	
+	char* PORT_PASV;
+	
+	if (strncmp(PORT, "4001", 4) == 0){
+		PORT_PASV = "4005";
+		}
+	if (strncmp(PORT, "4002", 4) == 0){
+		PORT_PASV = "4006";
+		}
+	if (strncmp(PORT, "4003", 4) == 0){
+		PORT_PASV = "4007";
+		}
+	if (strncmp(PORT, "4004", 4) == 0){
+		PORT_PASV = "4008";
+		}
+	
 		
 	switch(inputCase)
 	{
@@ -163,6 +181,7 @@ char*  parseInput(char* buff, int new_fd){
 		case 1:
 			returnbuff = "Closing Socket";
 			close(new_fd);
+			
 			break;
 		case 2:
 			returnbuff = "TYPE: Image";
@@ -185,7 +204,7 @@ char*  parseInput(char* buff, int new_fd){
 			break;
 		case 6:
 			returnbuff = "227 Entering Passive Mode (";
-			socketHelper("2002", 1);
+			socketHelper(PORT_PASV, 1);
 			int port = 2002;
 			int p1 = round(port/256);
 			int p2 = port % 256;
@@ -302,12 +321,6 @@ char *socketHelper(char* PORT, int data)
 
 
 
-
-
-
-
-
-
     if(!data){
     printf("server: waiting for connections...\n");
 
@@ -315,11 +328,11 @@ char *socketHelper(char* PORT, int data)
     	
         sin_size = sizeof their_addr;
         new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+        printf("New FD: %d\n", new_fd);
         if (new_fd == -1) {
             perror("accept");
             continue;
         }
-
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
@@ -331,7 +344,7 @@ char *socketHelper(char* PORT, int data)
 	send(new_fd, "ftp> ", 5, 0);
 	char buff[4096];
 	readLine(new_fd, buff);
-	char* returnVal = parseInput(buff, new_fd);
+	char* returnVal = parseInput(buff, new_fd, PORT);
 	printf("contents of returnVal are: %s\n", returnVal);
 	send(new_fd, returnVal,my_strlen(returnVal) , 0);
 	send(new_fd, &newline, 1, 0);
@@ -352,9 +365,50 @@ else {
     return sockIP;
 }
 
+void *threading_handler(void *threadid)
+{
+	char* PORT_TEMP1 = "4001";;
+	char* PORT_TEMP2 = "4002";;
+	char* PORT_TEMP3 = "4003";
+	char* PORT_TEMP4 = "4004";
+	char* PORT_TEMP;
+	int threadnum = (int)threadid;
+	int val = atoi(PORT_GLOBAL);
+	printf("ThreadNum: %d\n", threadnum);
+	switch(threadnum)
+	{
+		case 1:
+			val = val + threadnum;
+			//sprintf(PORT_TEMP1, "%d", val);
+			socketHelper(PORT_TEMP1, 0);
+			break;
+		case 2:
+			val = val + threadnum;
+			//sprintf(PORT_TEMP2, "%d", val);
+			socketHelper(PORT_TEMP2, 0);
+			break;			
+			
+		case 3:
+			val = val + threadnum;
+			//sprintf(PORT_TEMP3, "%d", val);
+			socketHelper(PORT_TEMP3, 0);
+			break;
+		case 4:
+			val = val + threadnum;
+			//sprintf(PORT_TEMP4, "%d", val);
+			socketHelper(PORT_TEMP4, 0);
+			break;
+		default:
+			socketHelper(PORT_GLOBAL, 0);
+	}
+	
+}
+	
+	
+
 int main(int argc, char **argv){
 	char* PORT;
-
+	int i;
     if (argc != 2) {
    	usage(argv[0]);
 	return -1;
@@ -362,6 +416,19 @@ int main(int argc, char **argv){
 	else{
 	PORT = strdup(argv[1]);
 	}
-	socketHelper(PORT, 0);
+	PORT_GLOBAL = PORT;
+	
+	//Threading
+	for (i=1; i<=NUM_CLIENT; i++) {
+        if(runThread(createThread(&threading_handler, (void*) i), NULL) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+        
+    }
+    pthread_exit(NULL);
+	
+	
 	
 }

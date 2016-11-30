@@ -22,16 +22,18 @@ CFLAGS=-g -Werror-implicit-function-declaration
 TH_CLIBS=-pthread -lm
 
 #List all the .o files here that need to be linked 
-OBJS=CSftp.o usage.o dir.o 
+OBJS=CSftp.o usage.o dir.o Thread.o 
 
 usage.o: usage.c usage.h
 
 dir.o: dir.c dir.h
 
-CSftp.o: CSftp.c dir.h usage.h
+Thread.o: Thread.c Thread.h
+
+CSftp.o: CSftp.c dir.h usage.h Thread.h
 
 CSftp: $(OBJS) 
-	$(CC) -o CSftp $(OBJS)  $(TH_CLIBS)
+	$(CC) -o CSftp $(OBJS) $(TH_CLIBS)
 
 clean:
 	rm -f *.o

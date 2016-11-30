@@ -21,6 +21,8 @@
 
 // the constructor, initializes the elements within the thread class
 void *createThread(void* (*func)(void*), void * parm) {
+	
+	
 	struct Thread *thread;
 	thread = malloc(sizeof(struct Thread));
 	if (thread) {
