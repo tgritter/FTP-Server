@@ -21,6 +21,8 @@
 #define BACKLOG 10     // how many pending connections queue will hold
 
 char *socket_IP[52];
+int* socketPorts[4];
+int* socketLogins[4];
 char* socketHelper(char* PORT, int data);
 int my_strlen(char *string); //Function to calculate length of given string
 void *threading_handler(void *threadid);
@@ -118,16 +120,37 @@ void str_server(int sock)
     fclose(file);
 }
 
+// returns 1 if this port is logged in
+int IsLoggedIn(char* PORT){
+	int i;
+	for (i = 0; i < 4; i++){
+		if (socketPorts[i] == PORT && socketLogins[i] == 1 ) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+// set this port to logged in
+void login(char* PORT) {
+	int i;
+	for (i = 0; i < 4; i++){
+		if (socketPorts[i] == PORT ) {
+			socketLogins[i] = 1;
+		}
+	}
+}
+
 char*  parseInput(char* buff, int new_fd, char* PORT){
 	char *returnbuff;
     	char sockIP[INET6_ADDRSTRLEN];
 	int inputCase;
+	int LoggedIn = IsLoggedIn(PORT);
+	
+	if (LoggedIn){
 	char newline = '\n';
 		struct addrinfo hints, *res;
 		int sockfd;
-	if (strncmp(buff, "cs317", 5) == 0){
-		inputCase = 0;
-		}
 	if (strncmp(buff, "USER cs317", 10) == 0 ){
 		inputCase = 0;
 		}
@@ -175,7 +198,7 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 	switch(inputCase)
 	{
 		case 0:
-			returnbuff = "Correct password";
+			returnbuff = "230 User logged in." ; 
 			break;
 		case 1:
 			returnbuff = "Closing Socket";
@@ -234,9 +257,18 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 			returnbuff = "500 Syntax error, command unrecognized.";
 	}
 	
+}
+	else{
+		
+	if (strncmp(buff, "USER cs317", 10) == 0 ){
+		login(PORT);
+		returnbuff = "230 User logged in." ; }
+	else {
+		returnbuff = "430 Invalid login.";
+	}
+}
 	return returnbuff;
 }
-
 // if data == 1, is a data port and won't send/recieve text
 char *socketHelper(char* PORT, int data)
 {
@@ -341,8 +373,9 @@ char *socketHelper(char* PORT, int data)
 	
 	char newline = '\n';
 	send(new_fd, "ftp> ", 5, 0);
-	char buff[4096];
+	char buff[16000];
 	readLine(new_fd, buff);
+	printf("the buff is: %s\n", buff);
 	char* returnVal = parseInput(buff, new_fd, PORT);
 	printf("contents of returnVal are: %s\n", returnVal);
 	send(new_fd, returnVal,my_strlen(returnVal) , 0);
@@ -373,21 +406,23 @@ void *threading_handler(void *threadid)
 	switch(threadnum)
 	{
 		case 1:
-			PORT_THREAD = "4001";
+			PORT_THREAD = "3001";
 			break;
 		case 2:
-			PORT_THREAD = "4002";
+			PORT_THREAD = "3002";
 			break;						
 		case 3:
-			PORT_THREAD = "4003";
+			PORT_THREAD = "3003";
 			break;
 		case 4:
-			PORT_THREAD = "4004";
+			PORT_THREAD = "3004";
 			break;
 		default:
-			PORT_THREAD = "4000";
+			PORT_THREAD = "3000";
 	}
 	
+	socketPorts[threadnum] = PORT_THREAD;
+	socketLogins[threadnum] = 0;
 	socketHelper(PORT_THREAD, 0);
 	
 }
