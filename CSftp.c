@@ -141,6 +141,18 @@ void login(char* PORT) {
 	}
 }
 
+// return index of the current port in socket table
+int PortIndex(char* PORT){
+	int i;
+	for (i = 0; i < 4; i++){
+		if (socketPorts[i] == PORT ) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+
 char*  parseInput(char* buff, int new_fd, char* PORT){
 	char *returnbuff;
     	char sockIP[INET6_ADDRSTRLEN];
@@ -178,23 +190,6 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 	if (strncmp(buff, "NLST", 4) == 0){
 		inputCase = 7;
 		}
-	
-	char* PORT_PASV;
-	
-	if (strncmp(PORT, "4001", 4) == 0){
-		PORT_PASV = "4005";
-		}
-	if (strncmp(PORT, "4002", 4) == 0){
-		PORT_PASV = "4006";
-		}
-	if (strncmp(PORT, "4003", 4) == 0){
-		PORT_PASV = "4007";
-		}
-	if (strncmp(PORT, "4004", 4) == 0){
-		PORT_PASV = "4008";
-		}
-	
-		
 	switch(inputCase)
 	{
 		case 0:
@@ -226,8 +221,12 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 			break;
 		case 6:
 			returnbuff = "227 Entering Passive Mode (";
-			socketHelper(PORT_PASV, 1);
-			int port = 2002;
+			printf("portIndex is %d\n", PortIndex(PORT));
+			int port = PortIndex(PORT) + 4005;
+			char charport[5];
+			sprintf(charport, "%c", port);
+			printf("port is %d\n", port);
+			socketHelper(charport, 1);
 			int p1 = round(port/256);
 			int p2 = port % 256;
 			int i;
