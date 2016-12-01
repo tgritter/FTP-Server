@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,10 +19,13 @@
 #define NUM_CLIENT 4
 #define BACKLOG 10     // how many pending connections queue will hold
 
-char *socket_IP[52];
+
+char socket_IP[52];
 int* socketPorts[4];
 int* socketLogins[4];
+int pasvMode = 0;
 char* socketHelper(char* PORT, int data);
+char* GLOBAL_PORT;
 int my_strlen(char *string); //Function to calculate length of given string
 void *threading_handler(void *threadid);
 void sigchld_handler(int s)
@@ -70,20 +72,30 @@ void *get_in_addr(struct sockaddr *sa)
 
 // read a line from the client
 void readLine(int new_fd, char* buff){
+	memset(&buff[0], 0, strlen(buff));
 	recv(new_fd, buff, 2000, 0);
-	printf("contents of buff are %s\n", buff);
 }
 
-void str_server(int sock) 
+void str_server(int sock, char* fileName, char **returnbuff) 
 { 
+    char newline = '\n';
     char buf[1025]; 
-    const char* filename = "test.txt"; 
+    char* filename = fileName;
+    printf("Filename: %s\n", filename);
+    
     FILE *file = fopen(filename, "rb"); 
     if (!file)
     {
-        printf("Can't open file for reading"); 
+        printf("Can't open file for reading");
+        send(sock, "450 Requested file action not taken", 35, 0);
+		send(sock, &newline, 1, 0);
+		*returnbuff = "426 Connection closed; transfer aborted"; 
         return;
     }
+    send(sock, "150 File status okay; about to open data connection", 52, 0);
+	send(sock, &newline, 1, 0);
+	*returnbuff = "226 Closing data connection. Requested file action successful";
+	
     while (!feof(file)) 
     { 
         int rval = fread(buf, 1, sizeof(buf), file); 
@@ -123,7 +135,7 @@ void str_server(int sock)
 // returns 1 if this port is logged in
 int IsLoggedIn(char* PORT){
 	int i;
-	for (i = 0; i < 4; i++){
+	for (i = 1; i <= 4; i++){
 		if (socketPorts[i] == PORT && socketLogins[i] == 1 ) {
 			return 1;
 		}
@@ -134,7 +146,7 @@ int IsLoggedIn(char* PORT){
 // set this port to logged in
 void login(char* PORT) {
 	int i;
-	for (i = 0; i < 4; i++){
+	for (i = 1; i <= 4; i++){
 		if (socketPorts[i] == PORT ) {
 			socketLogins[i] = 1;
 		}
@@ -152,44 +164,94 @@ int PortIndex(char* PORT){
 	return 0;
 }
 
-
 char*  parseInput(char* buff, int new_fd, char* PORT){
 	char *returnbuff;
-    	char sockIP[INET6_ADDRSTRLEN];
+    char sockIP[INET6_ADDRSTRLEN];
+    printf("Printed %s sockettest2: \n", socket_IP);
 	int inputCase;
 	int LoggedIn = IsLoggedIn(PORT);
+	char fileName[50] = { 0 };
+	int i;
+	int size = 0;
+	int arguments = 1;
+	
+	for (i=0; i < strlen(buff); i++){
+		
+		if(buff[i] == 10 || buff[i] == 13){
+			break;
+		}
+		size = size + 1;
+		}
+		printf("Size: %d\n", size);
+		
+	for (i=0; i < strlen(buff); i++){
+		
+		if(buff[i] == 32){
+			arguments = arguments + 1;
+		}
+		
+		}
+		printf("Arguments: %d\n", arguments);
 	
 	if (LoggedIn){
 	char newline = '\n';
 		struct addrinfo hints, *res;
 		int sockfd;
-	if (strncmp(buff, "USER cs317", 10) == 0 ){
+	if ((strncmp(buff, "TYPE", 4) == 0 && strncmp(buff, "TYPE I", 6) != 0) || (strncmp(buff, "MODE", 4) == 0 && strncmp(buff, "MODE S", 6) != 0) || (strncmp(buff, "STRU", 4) == 0 && strncmp(buff, "STRU F", 6) != 0)){
+		inputCase = 9;
+		}
+		
+		if (strncmp(buff, "TYPE", 4) == 0 && strncmp(buff, "TYPE A", 6) != 0){
+		inputCase = 9;
+		}
+	
+	if (strncmp(buff, "USER cs317", size) == 0 && strlen(buff) == 12){
 		inputCase = 0;
 		}
-	if (strncmp(buff, "QUIT", 4) == 0){
+	if (strncmp(buff, "QUIT", size) == 0 && size == 4){
 		inputCase = 1;
 		}
-	if (strncmp(buff, "TYPE I", 6) == 0){
+	if (strncmp(buff, "TYPE I", size) == 0 && size == 6){
 		inputCase = 2;
 		}
-	if (strncmp(buff, "TYPE A", 6) == 0){
+	if (strncmp(buff, "TYPE A", size) == 0 && size == 6){
 		inputCase = 2;
 		}
-	if (strncmp(buff, "MODE S", 6) == 0){
+	if (strncmp(buff, "MODE S", size) == 0 && size == 6){
 		inputCase = 3;
 		}
-	if (strncmp(buff, "STRU F", 6) == 0){
+	if (strncmp(buff, "STRU F", size) == 0 && size == 6){
 		inputCase = 4;
 		}
-	if (strncmp(buff, "RETR", 4) == 0){
+	if (strncmp(buff, "RETR ", 5) == 0){
 		inputCase = 5;
+		strncpy(fileName, buff+5, size - 5);
+		printf("Test: %d\n", fileName);
 		}
-	if (strncmp(buff, "PASV", 4) == 0){
+	if (strncmp(buff, "PASV", 4) == 0 && size == 4){
 		inputCase = 6;
 		}
-	if (strncmp(buff, "NLST", 4) == 0){
+	
+	if (strncmp(buff, "NLST", 4) == 0 && size == 4){
 		inputCase = 7;
 		}
+	if (inputCase == 5 && pasvMode == 1){
+		inputCase = 10;
+		}
+	if (inputCase == 7 && pasvMode == 1){
+		inputCase = 11;
+		}
+	
+		
+	if ((strncmp(buff, "NLST", 4) == 0 || strncmp(buff, "PASV", 4) == 0 || strncmp(buff, "QUIT", 			4) == 0) && arguments != 1){
+		inputCase = 8;
+		}
+	if ((strncmp(buff, "USER", 4) ==0 || strncmp(buff, "TYPE", 4) ==0 || strncmp(buff, "MODE", 4) ==0 || strncmp(buff, "STRU", 4) == 0 || strncmp(buff, "RETR", 4) == 0) && arguments != 2){
+		inputCase = 8;
+		}
+	
+	
+		
 	switch(inputCase)
 	{
 		case 0:
@@ -197,6 +259,8 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 			break;
 		case 1:
 			returnbuff = "Closing Socket";
+			send(new_fd, "221 Service closing control connection", 38, 0);
+			send(new_fd, &newline, 1, 0);
 			close(new_fd);
 			
 			break;
@@ -216,11 +280,25 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 			send(new_fd, &newline, 1, 0);
 			break;
 		case 5:
-			returnbuff = "Transfering File";
-			str_server(new_fd);
+			str_server(new_fd, fileName, &returnbuff);
 			break;
 		case 6:
 			returnbuff = "227 Entering Passive Mode (";
+			
+			int count = 0;
+			int k;
+			for(k = 0; k < strlen(socket_IP); k++){
+				if(socket_IP[k] == 44 && count < 4){
+				count = count + 1;
+				}
+				if(count == 4){
+				socket_IP[k] = 0;
+				}
+			}
+			printf("Socket_IPtestf %d returnbuff \n", socket_IP);
+					
+			
+			
 			printf("portIndex is %d\n", PortIndex(PORT));
 			int port = PortIndex(PORT) + 4005;
 			char charport[5];
@@ -230,27 +308,51 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 			int p1 = round(port/256);
 			int p2 = port % 256;
 			int i;
-			char* tempIP = socket_IP;
+			char* tempIP = " ";
+			tempIP = socket_IP;
 			int ip_len = my_strlen(tempIP);
 			for(i = 0; i < ip_len; i++){
 				if((char)tempIP[i] == '.'){
 					tempIP[i] = ',';
 				}
 			}
+			
 			char p1_char[3];
 			sprintf(p1_char, "%d", p1);
 			char p2_char[3];
 			sprintf(p2_char, "%d", p2);
 			char* p1p2 = concat(p1_char, ",");
 			p1p2 = concat(p1p2, p2_char);
-			char *return_address = strcat(socket_IP, ",");
+			char *return_address = "test";
+			
+			return_address = strcat(socket_IP, ",");
 			return_address = strcat(return_address, p1p2);
 			returnbuff = concat(returnbuff, return_address);
 			returnbuff = concat(returnbuff, ")");
+			printf("Printed %s returnbuff \n", returnbuff);
+			printf("Socket_IP %d returnbuff \n", socket_IP);
+			printf("Socket_IP10 %d returnbuff \n", socket_IP[10]);
+			printf("Socket_IP11 %d returnbuff \n", socket_IP[11]);
+			printf("Socket_IP12 %d returnbuff \n", socket_IP[12]);
+			printf("Socket_IP13 %d returnbuff \n", socket_IP[13]);
+			printf("Socket_IP14 %d returnbuff \n", socket_IP[14]);
+			printf("Socket_IP15 %d returnbuff \n", socket_IP[15]);
+			printf("Socket_IP16 %d returnbuff \n", socket_IP[16]);
 			break;
 		case 7:
-			returnbuff = "Returning Name List";
 			printf("Printed %d directory entries\n", listFiles(new_fd, "."));
+			break;
+		case 8:
+			returnbuff = "501 Syntax error inparameters or arguments.";
+			break;
+		case 9:
+			returnbuff = "504 Command not implemented for that parameter.";
+			break;
+		case 10:
+			printf("Printed %d directory entries\n", listFiles(new_fd, "."));
+			break;
+		case 11:
+			str_server(new_fd, fileName, &returnbuff);
 			break;
 		default :
 			returnbuff = "500 Syntax error, command unrecognized.";
@@ -263,7 +365,7 @@ char*  parseInput(char* buff, int new_fd, char* PORT){
 		login(PORT);
 		returnbuff = "230 User logged in." ; }
 	else {
-		returnbuff = "430 Invalid login.";
+		returnbuff = "530 Invalid login.";
 	}
 }
 	return returnbuff;
@@ -314,7 +416,6 @@ char *socketHelper(char* PORT, int data)
 	
 	void *addr;
         char *ipver;
-
         // get the pointer to the address itself,
         // different fields in IPv4 and IPv6:
         if (p->ai_family == AF_INET) { // IPv4
@@ -367,7 +468,9 @@ char *socketHelper(char* PORT, int data)
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s);
         printf("server: got connection from %s\n", s);
-	
+		char newline2 = '\n';
+		send(new_fd, "220 Service ready for new user", 30, 0);
+		send(new_fd, &newline2, 1, 0);
 	while(1) {
 	
 	char newline = '\n';
@@ -405,19 +508,19 @@ void *threading_handler(void *threadid)
 	switch(threadnum)
 	{
 		case 1:
-			PORT_THREAD = "3001";
+			PORT_THREAD = GLOBAL_PORT;
 			break;
 		case 2:
-			PORT_THREAD = "3002";
+			PORT_THREAD = "3502";
 			break;						
 		case 3:
-			PORT_THREAD = "3003";
+			PORT_THREAD = "3503";
 			break;
 		case 4:
-			PORT_THREAD = "3004";
+			PORT_THREAD = "3504";
 			break;
 		default:
-			PORT_THREAD = "3000";
+			PORT_THREAD = "3501";
 	}
 	
 	socketPorts[threadnum] = PORT_THREAD;
@@ -437,6 +540,7 @@ int main(int argc, char **argv){
 	}
 	else{
 	PORT = strdup(argv[1]);
+	GLOBAL_PORT = PORT;
 	}
 	
 	//Threading loop
